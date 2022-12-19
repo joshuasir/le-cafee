@@ -2,7 +2,7 @@ package menu;
 
 import java.util.Scanner;
 
-public class MainMenu {
+public class MainMenu implements Menu {
     public static MainMenu instance;
     private final Scanner scanner = new Scanner(System.in);
 
@@ -21,6 +21,7 @@ public class MainMenu {
         }
     }
 
+    @Override
     public void show() {
         String[] menus = { "Play New Cafe", "High Score", "Exit" };
         while (true) {
@@ -43,10 +44,10 @@ public class MainMenu {
             }
             switch (choice) {
                 case 1:
-                    // TODO
+                    new CafeMenu().show();
                     break;
                 case 2:
-                    // TODO
+                    new HighscoreMenu().show();
                     break;
                 case 3:
                     return;
