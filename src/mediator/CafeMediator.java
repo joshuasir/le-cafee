@@ -7,6 +7,7 @@ import cafe.customer.Customer;
 import cafe.waiter.Waiter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,8 +21,12 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     private final ArrayList<Customer> customers = new ArrayList<>();
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private final ArrayList<CafeEventListener> listeners = new ArrayList<>();
+    
     @Override
-    public void notify(Object sender, String event, String data) {
+    public synchronized void notify(Object sender, String event, String data) {
+    	try {
+    		
+    	
         if (sender instanceof Waiter) {
             switch (event) {
                 case "ordered": {
@@ -101,7 +106,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
                         if (customer == sender) {
                             leaving = customer;
                             for (Cook cook : cooks) {
-                                if (cook.getCustomer().equals(customer.getName())) {
+                            	if (cook.getCustomer().equals(customer.getName())) {
                                     cook.cancel();
                                     if (!cookQueue.contains(cook.getName())) {
                                         cookQueue.add(cook.getName());
@@ -109,7 +114,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
                                 }
                             }
                             for (Waiter waiter : waiters) {
-                                if (waiter.getCustomer().equals(customer.getName())) {
+                            	if (waiter.getCustomer().equals(customer.getName())) {
                                     waiter.cancel();
                                     if (!waiterQueue.contains(waiter.getName())) {
                                         waiterQueue.add(waiter.getName());
@@ -130,13 +135,14 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
                 case "finish": {
                     for (CafeEventListener listener : listeners) {
                         customers.remove(sender);
+                        
                         listener.onEvent("score", data);
                     }
                     break;
                 }
                 case "order": {
                     for (Waiter waiter : waiters) {
-                        if (waiter.getName().equals(data)) {
+                    	if (waiter.getName().equals(data)) {
                             waiter.takeOrder(((Customer) sender).getName());
                             break;
                         }
@@ -145,6 +151,8 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
                 default:
                     break;
             }
+        }}catch(Exception ex) {
+        	
         }
     }
 
@@ -166,11 +174,26 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
         pool.execute(waiter);
         waiterQueue.add(waiter.getName());
     }
+    
 
     public void addCustomer(String name, int tolerance) {
         Customer customer = new Customer(this, waiterQueue, name, tolerance);
         customers.add(customer);
         pool.execute(customer);
+    }
+    
+    public void upgradeCookSkill(int idx) {
+    	Cook toUpd = cooks.get(idx);
+    	toUpd.setSkill(toUpd.getSkill()+1);
+    }
+    public void upgradeCookSpeed(int idx) {
+    	Cook toUpd = cooks.get(idx);
+    	toUpd.setSpeed(toUpd.getSpeed()+1);
+    }
+
+    public void upgradeWaiter(int idx) {
+    	Waiter toUpd = waiters.get(idx);
+    	toUpd.setSpeed(toUpd.getSpeed()+1);
     }
 
     public void pause() {
@@ -182,6 +205,18 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
         }
         for (Customer customer : customers) {
             customer.pause();
+        }
+    }
+    
+    public void close() {
+        for (Waiter waiter : waiters) {
+            waiter.close();
+        }
+        for (Cook cook : cooks) {
+            cook.close();
+        }
+        for (Customer customer : customers) {
+            customer.close();
         }
     }
 
@@ -196,12 +231,60 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
             customer.resume();
         }
     }
+    public ArrayList<Customer> getCustomers() {
+    	ArrayList<Customer> customerSnapshot = new ArrayList<Customer>();
+//    	Collections.copy(customerSnapshot, customers);
+    
+    	customers.forEach(e->{
+    		try {
+				customerSnapshot.add((Customer) e.clone());
+			} catch (CloneNotSupportedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+    	});
+    	
+    	return customerSnapshot;
+    }
+    public ArrayList<Cook> getCooks() {
+    	ArrayList<Cook> cookSnapshot = new ArrayList<Cook>();
+//    	Collections.copy(cookSnapshot, cooks);
 
+        	
+    	cooks.forEach(e->{
+    		try {
+    			cookSnapshot.add((Cook) e.clone());
+			} catch (CloneNotSupportedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+    	});
+    	
+    	return cookSnapshot;
+    
+    }
+    public ArrayList<Waiter> getWaiters() {
+    	ArrayList<Waiter> waiterSnapshot = new ArrayList<Waiter>();
+//    	Collections.copy(waiterSnapshot, waiters);
+    
+    	waiters.forEach(e->{
+    		try {
+    			waiterSnapshot.add((Waiter) e.clone());
+			} catch (CloneNotSupportedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+    	});
+	    
+    	return waiterSnapshot;
+    }
     public void printCurrentState() {
         System.out.println("=============");
         System.out.println("Customer");
         System.out.println("=============");
+        
         for (Customer customer : customers) {
+        	if(customer==null) continue;
             System.out.println(customer.getName() + " | " + customer.getCurrentState());
         }
         System.out.println("=============");

@@ -1,0 +1,24 @@
+asd,0
+tes,0
+re,0
+asd,500
+uy,100
+opop,1000
+tes,-240
+asd,-240
+tes,-240
+asdas,-240
+tes,90
+hgf,-270
+asd,150
+asd,90
+tes,-240
+tes,0
+tes,120
+Bruce Wayne,60
+tes,1020
+hello,-150
+ultraman,-60
+kratos,300
+hello world,60
+

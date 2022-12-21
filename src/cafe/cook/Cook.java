@@ -5,7 +5,7 @@ import mediator.Mediator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Cook implements Runnable {
+public class Cook implements Runnable,Cloneable {
     private final Mediator cafe;
     private final BlockingQueue<String> queue;
     private volatile CookState state = new IdleState(this);
@@ -16,7 +16,8 @@ public class Cook implements Runnable {
     private final AtomicInteger timer = new AtomicInteger(0);
     private volatile boolean paused = false;
     private final Object pauseLock = new Object();
-
+    private volatile boolean close = false;
+    
     public Cook(Mediator cafe, BlockingQueue<String> queue, String name) {
         this.cafe = cafe;
         this.queue = queue;
@@ -26,7 +27,10 @@ public class Cook implements Runnable {
     public void changeState(CookState state) {
         this.state = state;
     }
-
+    @Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
     @Override
     public void run() {
         while (true) {
@@ -46,6 +50,7 @@ public class Cook implements Runnable {
                     }
                 }
             }
+            if(close) return;
             if (state instanceof CookingState) {
                 if (timer.get() > 0) {
                     timer.set(timer.get() - 1);
@@ -62,7 +67,9 @@ public class Cook implements Runnable {
             }
         }
     }
-
+    public void close() {
+    	this.close = true;
+    }
     public int getSpeed() {
         return speed;
     }

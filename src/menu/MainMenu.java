@@ -1,11 +1,10 @@
 package menu;
 
-import java.util.Scanner;
 
-public class MainMenu implements Menu {
+public class MainMenu extends Menu {
     public static MainMenu instance;
-    private final Scanner scanner = new Scanner(System.in);
-
+    
+	
     private MainMenu() {}
 
     public static MainMenu getInstance() {
@@ -14,6 +13,7 @@ public class MainMenu implements Menu {
         }
         return instance;
     }
+
 
     private void clearScreen() {
         for (int i = 0; i < 100; i++) {
@@ -32,26 +32,20 @@ public class MainMenu implements Menu {
                 System.out.println(menu);
             }
             idx--;
-            System.out.print(">> ");
-            if (!scanner.hasNextInt()) {
-                scanner.nextLine();
-                continue;
-            }
-            int choice = scanner.nextInt();
-            if (choice < 1 || choice > idx) {
-                scanner.nextLine();
-                continue;
-            }
-            switch (choice) {
+
+            switch (getIntInput(">> ",1,idx)) {
                 case 1:
-                    new CafeMenu().show();
+                    new CafeMenu().show();                    
                     break;
                 case 2:
-                    new HighscoreMenu().show();
+                	new HighscoreMenu().show();
+              
                     break;
                 case 3:
+//                	System.out.println("tes");
                     return;
             }
         }
     }
+
 }

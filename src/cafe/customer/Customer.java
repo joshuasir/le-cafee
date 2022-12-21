@@ -6,7 +6,7 @@ import mediator.Mediator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Customer implements Runnable {
+public class Customer implements Runnable,Cloneable {
     private final Mediator cafe;
     private final BlockingQueue<String> waiterQueue;
     private CustomerState state = new OrderState(this);
@@ -16,6 +16,7 @@ public class Customer implements Runnable {
     private final AtomicInteger timer = new AtomicInteger(0);
     private final AtomicInteger tolerance;
     private volatile boolean paused = false;
+    private volatile boolean close = false;
     private final Object pauseLock = new Object();
     private final String name;
 
@@ -25,7 +26,13 @@ public class Customer implements Runnable {
         this.name = name;
         this.tolerance = new AtomicInteger(tolerance);
     }
-
+    @Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+    public void close() {
+        close = true;
+    }
     @Override
     public void run() {
         while (true) {
@@ -45,6 +52,7 @@ public class Customer implements Runnable {
                     }
                 }
             }
+            if(close) return;
             if (tolerance.get() == 0) {
                 cafe.notify(this, "leave", null);
                 break;
