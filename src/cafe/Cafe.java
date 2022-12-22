@@ -125,9 +125,9 @@ public class Cafe implements CafeEventListener,Runnable {
     	cafeMediator.addCook("C2");
     	cafeMediator.addWaiter("W1");
     	cafeMediator.addWaiter("W2");
-    	cafeMediator.addCustomer("P1", 4);
-    	cafeMediator.addCustomer("P2", 4);
-    	cafeMediator.addCustomer("P3", 4);
+    	cafeMediator.addCustomer("P1");
+    	cafeMediator.addCustomer("P2");
+    	cafeMediator.addCustomer("P3");
     }
 
     public boolean increaseSeat() {
@@ -158,7 +158,7 @@ public class Cafe implements CafeEventListener,Runnable {
     public boolean addCustomer() {
         // TODO
     	if(getCurrentCustomerSize()>=seat) return false;
-    	cafeMediator.addCustomer("P"+customerInc, 4);
+    	cafeMediator.addCustomer("P"+customerInc);
     	customerInc++;
         return true;
     }

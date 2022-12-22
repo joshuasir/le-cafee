@@ -3,33 +3,21 @@ package cafe.waiter;
 import mediator.Mediator;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class Waiter implements Runnable,Cloneable {
-    private final Mediator cafe;
-    private final BlockingQueue<String> queue;
+import cafe.factory.Person;
+
+public class Waiter extends Person {
     private WaiterState state = new IdleState(this);
-    private String customer;
     private String cook;
-    private final AtomicInteger timer = new AtomicInteger(0);
-    private volatile boolean paused = false;
-    private volatile boolean close = false;
-    private final Object pauseLock = new Object();
-    private final String name;
+    private String customer;
     private int speed = 1;
     private String event;
     private String data;
 
     public Waiter(Mediator cafe, BlockingQueue<String> queue, String name) {
-        this.cafe = cafe;
-        this.queue = queue;
-        this.name = name;
+        super(cafe, queue, name);
     }
 
-    @Override
-	public Object clone() throws CloneNotSupportedException {
-		return super.clone();
-	}
     @Override
     public void run() {
         while (true) {
@@ -87,17 +75,12 @@ public class Waiter implements Runnable,Cloneable {
         this.data = data;
     }
 
-    public void pause() {
-        paused = true;
+    public String getCook() {
+        return cook;
     }
-    public void close() {
-        close = true;
-    }
-    public void resume() {
-        synchronized (pauseLock) {
-            paused = false;
-            pauseLock.notifyAll();
-        }
+
+    public void setCook(String cook) {
+        this.cook = cook;
     }
 
     public String getCustomer() {
@@ -108,14 +91,6 @@ public class Waiter implements Runnable,Cloneable {
         this.customer = customer;
     }
 
-    public String getCook() {
-        return cook;
-    }
-
-    public void setCook(String cook) {
-        this.cook = cook;
-    }
-
     public int getSpeed() {
         return speed;
     }
@@ -124,12 +99,8 @@ public class Waiter implements Runnable,Cloneable {
         this.speed = speed;
     }
 
-    public void setTimer(int timer) {
-        this.timer.set(timer);
-    }
-
-    public String getName() {
-        return name;
+    public void upSpeed(){
+        speed++;
     }
 
     public String getCurrentState() {

@@ -4,6 +4,8 @@ import Observer.CafeEventListener;
 import Observer.CafeEventPublisher;
 import cafe.cook.Cook;
 import cafe.customer.Customer;
+import cafe.factory.Person;
+import cafe.factory.PersonFactory;
 import cafe.waiter.Waiter;
 
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class CafeMediator implements Mediator, CafeEventPublisher {
     private final BlockingQueue<String> cookQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<String> waiterQueue = new LinkedBlockingQueue<>();
+    private final ArrayList<Person> everyone = new ArrayList<>();
     private final ArrayList<Cook> cooks = new ArrayList<>();
     private final ArrayList<Waiter> waiters = new ArrayList<>();
     private final ArrayList<Customer> customers = new ArrayList<>();
@@ -23,7 +26,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     private final ArrayList<CafeEventListener> listeners = new ArrayList<>();
     
     @Override
-    public synchronized void notify(Object sender, String event, String data) {
+    public synchronized void notify(Person sender, String event, String data) {
     	try {
     		
     	
@@ -125,6 +128,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
                         }
                     }
                     if (leaving != null) {
+                        everyone.remove(leaving);
                         customers.remove(leaving);
                     }
                     for (CafeEventListener listener : listeners) {
@@ -135,7 +139,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
                 case "finish": {
                     for (CafeEventListener listener : listeners) {
                         customers.remove(sender);
-                        
+                        everyone.remove(sender);
                         listener.onEvent("score", data);
                     }
                     break;
@@ -162,75 +166,61 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     }
 
     public void addCook(String name) {
-        Cook cook = new Cook(this, waiterQueue, name);
-        cooks.add(cook);
-        pool.execute(cook);
-        cookQueue.add(cook.getName());
+        Person person = PersonFactory.getPerson("cook", this, waiterQueue, name);
+        everyone.add(person);
+        cooks.add((Cook)person);
+        pool.execute(person);
+        cookQueue.add(name);
     }
 
     public void addWaiter(String name) {
-        Waiter waiter = new Waiter(this, cookQueue, name);
-        waiters.add(waiter);
-        pool.execute(waiter);
-        waiterQueue.add(waiter.getName());
+        Person person = PersonFactory.getPerson("waiter", this, cookQueue, name);
+        everyone.add(person);
+        waiters.add((Waiter)person);
+        pool.execute(person);
+        waiterQueue.add(name);
     }
-    
 
-    public void addCustomer(String name, int tolerance) {
-        Customer customer = new Customer(this, waiterQueue, name, tolerance);
-        customers.add(customer);
-        pool.execute(customer);
+    public void addCustomer(String name) {
+        Person person = PersonFactory.getPerson("customer", this, waiterQueue, name);
+        everyone.add(person);
+        customers.add((Customer)person);
+        pool.execute(person);
     }
     
     public void upgradeCookSkill(int idx) {
     	Cook toUpd = cooks.get(idx);
-    	toUpd.setSkill(toUpd.getSkill()+1);
+    	toUpd.upSkill();
     }
+
     public void upgradeCookSpeed(int idx) {
     	Cook toUpd = cooks.get(idx);
-    	toUpd.setSpeed(toUpd.getSpeed()+1);
+    	toUpd.upSpeed();
     }
 
     public void upgradeWaiter(int idx) {
     	Waiter toUpd = waiters.get(idx);
-    	toUpd.setSpeed(toUpd.getSpeed()+1);
+    	toUpd.upSpeed();
     }
 
     public void pause() {
-        for (Waiter waiter : waiters) {
-            waiter.pause();
-        }
-        for (Cook cook : cooks) {
-            cook.pause();
-        }
-        for (Customer customer : customers) {
-            customer.pause();
+        for (Person person : everyone) {
+            person.pause();
         }
     }
     
     public void close() {
-        for (Waiter waiter : waiters) {
-            waiter.close();
-        }
-        for (Cook cook : cooks) {
-            cook.close();
-        }
-        for (Customer customer : customers) {
-            customer.close();
+        for(Person person : everyone){
+            person.close();
         }
     }
 
     public void resume() {
-        for (Waiter waiter : waiters) {
-            waiter.resume();
-        }
-        for (Cook cook : cooks) {
-            cook.resume();
-        }
-        for (Customer customer : customers) {
-            customer.resume();
+        for(Person person : everyone){
+            person.resume();
         }
     }
+
     public ArrayList<Customer> getCustomers() {
     	ArrayList<Customer> customerSnapshot = new ArrayList<Customer>();
 //    	Collections.copy(customerSnapshot, customers);
@@ -246,6 +236,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     	
     	return customerSnapshot;
     }
+
     public ArrayList<Cook> getCooks() {
     	ArrayList<Cook> cookSnapshot = new ArrayList<Cook>();
 //    	Collections.copy(cookSnapshot, cooks);
@@ -263,6 +254,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     	return cookSnapshot;
     
     }
+
     public ArrayList<Waiter> getWaiters() {
     	ArrayList<Waiter> waiterSnapshot = new ArrayList<Waiter>();
 //    	Collections.copy(waiterSnapshot, waiters);
@@ -278,6 +270,7 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
 	    
     	return waiterSnapshot;
     }
+
     public void printCurrentState() {
         System.out.println("=============");
         System.out.println("Customer");

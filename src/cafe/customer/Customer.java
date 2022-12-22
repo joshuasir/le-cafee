@@ -1,38 +1,24 @@
 package cafe.customer;
 
-import cafe.cook.CookingState;
 import mediator.Mediator;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Customer implements Runnable,Cloneable {
-    private final Mediator cafe;
-    private final BlockingQueue<String> waiterQueue;
+import cafe.factory.Person;
+
+public class Customer extends Person {
     private CustomerState state = new OrderState(this);
     private String waiter;
     private String cook;
     private int cookSkill;
-    private final AtomicInteger timer = new AtomicInteger(0);
     private final AtomicInteger tolerance;
-    private volatile boolean paused = false;
-    private volatile boolean close = false;
-    private final Object pauseLock = new Object();
-    private final String name;
 
-    public Customer(Mediator cafe, BlockingQueue<String> waiterQueue, String name, int tolerance) {
-        this.cafe = cafe;
-        this.waiterQueue = waiterQueue;
-        this.name = name;
-        this.tolerance = new AtomicInteger(tolerance);
+    public Customer(Mediator cafe, BlockingQueue<String> queue, String name) {
+        super(cafe, queue, name);
+        this.tolerance = new AtomicInteger(4);
     }
-    @Override
-	public Object clone() throws CloneNotSupportedException {
-		return super.clone();
-	}
-    public void close() {
-        close = true;
-    }
+
     @Override
     public void run() {
         while (true) {
@@ -58,7 +44,7 @@ public class Customer implements Runnable,Cloneable {
                 break;
             }
             if (state instanceof OrderState) {
-                String newWaiter = waiterQueue.poll();
+                String newWaiter = queue.poll();
                 if (newWaiter != null) {
                     state.ordering(newWaiter);
                     cafe.notify(this, "order", newWaiter);
@@ -83,17 +69,6 @@ public class Customer implements Runnable,Cloneable {
 
     public void changeState(CustomerState state) {
         this.state = state;
-    }
-
-    public void pause() {
-        paused = true;
-    }
-
-    public void resume() {
-        synchronized (pauseLock) {
-            paused = false;
-            pauseLock.notifyAll();
-        }
     }
 
     public String getWaiter() {
@@ -124,10 +99,6 @@ public class Customer implements Runnable,Cloneable {
         return state.getCurrentState() + "(" + tolerance + ")";
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void waitWaiter() {
         state.waitWaiter();
     }
@@ -142,9 +113,5 @@ public class Customer implements Runnable,Cloneable {
 
     public void eat() {
         state.eat();
-    }
-
-    public void setTimer(int timer) {
-        this.timer.set(timer);
     }
 }
