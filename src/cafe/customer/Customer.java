@@ -64,6 +64,7 @@ public class Customer extends Person {
                     break;
                 }
             }
+//            System.out.println("customer");
         }
     }
 

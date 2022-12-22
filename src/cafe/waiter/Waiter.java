@@ -63,6 +63,8 @@ public class Waiter extends Person {
                 state = new IdleState(this);
                 setNotify("give", customer);
             }
+//            System.out.println("waiter");
+
         }
     }
 

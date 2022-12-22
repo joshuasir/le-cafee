@@ -8,9 +8,11 @@ import cafe.factory.Person;
 import cafe.factory.PersonFactory;
 import cafe.waiter.Waiter;
 
-import java.util.ArrayList;
+import java.util.Vector;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -18,15 +20,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class CafeMediator implements Mediator, CafeEventPublisher {
     private final BlockingQueue<String> cookQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<String> waiterQueue = new LinkedBlockingQueue<>();
-    private final ArrayList<Person> everyone = new ArrayList<>();
-    private final ArrayList<Cook> cooks = new ArrayList<>();
-    private final ArrayList<Waiter> waiters = new ArrayList<>();
-    private final ArrayList<Customer> customers = new ArrayList<>();
+    private final CopyOnWriteArrayList<Cook> cooks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Waiter> waiters = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Customer> customers = new CopyOnWriteArrayList<>();
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private final ArrayList<CafeEventListener> listeners = new ArrayList<>();
+    private final Vector<CafeEventListener> listeners = new Vector<>();
     
     @Override
-    public synchronized void notify(Person sender, String event, String data) {
+    public void notify(Object sender, String event, String data) {
     	try {
     		
     	
@@ -34,24 +35,21 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
             switch (event) {
                 case "ordered": {
                     String[] datas = data.split(";");
-                    for (Waiter waiter : waiters) {
-                        if (sender == waiter) {
-                            waiterQueue.add(waiter.getName());
-                            for (Cook cook : cooks) {
-                                if (cook.getName().equals(datas[1])) {
-                                    cook.cook(datas[0]);
-                                    for (Customer customer : customers) {
-                                        if (customer.getName().equals(datas[0])) {
-                                            customer.waitCook(cook.getName(), cook.getSkill());
-                                            break;
-                                        }
-                                    }
+                    
+                    waiterQueue.add(((Waiter) sender).getName());
+                    for (Cook cook : cooks) {
+                        if (cook.getName().equals(datas[1])) {
+                            cook.cook(datas[0]);
+                            for (Customer customer : customers) {
+                                if (customer.getName().equals(datas[0])) {
+                                    customer.waitCook(cook.getName(), cook.getSkill());
                                     break;
                                 }
                             }
                             break;
                         }
                     }
+                           
                     break;
                 }
                 case "finish": {
@@ -104,32 +102,26 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
         } else if (sender instanceof Customer) {
             switch (event) {
                 case "leave": {
-                    Customer leaving = null;
-                    for (Customer customer : customers) {
-                        if (customer == sender) {
-                            leaving = customer;
-                            for (Cook cook : cooks) {
-                            	if (cook.getCustomer().equals(customer.getName())) {
-                                    cook.cancel();
-                                    if (!cookQueue.contains(cook.getName())) {
-                                        cookQueue.add(cook.getName());
-                                    }
-                                }
+                    
+                    for (Cook cook : cooks) {
+                    	if (cook.getCustomer().equals(((Customer) sender).getName())) {
+                            cook.cancel();
+                            if (!cookQueue.contains(cook.getName())) {
+                                cookQueue.add(cook.getName());
                             }
-                            for (Waiter waiter : waiters) {
-                            	if (waiter.getCustomer().equals(customer.getName())) {
-                                    waiter.cancel();
-                                    if (!waiterQueue.contains(waiter.getName())) {
-                                        waiterQueue.add(waiter.getName());
-                                    }
-                                }
-                            }
-                            break;
                         }
                     }
-                    if (leaving != null) {
-                        everyone.remove(leaving);
-                        customers.remove(leaving);
+                    for (Waiter waiter : waiters) {
+                    	if (waiter.getCustomer().equals(((Customer) sender).getName())) {
+                            waiter.cancel();
+                            if (!waiterQueue.contains(waiter.getName())) {
+                                waiterQueue.add(waiter.getName());
+                            }
+                        }
+                    }
+                         
+                    if (sender != null) {
+                        customers.remove(sender);
                     }
                     for (CafeEventListener listener : listeners) {
                         listener.onEvent("score", "-300");
@@ -166,26 +158,26 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     }
 
     public void addCook(String name) {
-        Person person = PersonFactory.getPerson("cook", this, waiterQueue, name);
-        everyone.add(person);
-        cooks.add((Cook)person);
-        pool.execute(person);
-        cookQueue.add(name);
+        Cook cook = new Cook(this, waiterQueue, name);
+        cook.pause();
+        cooks.add(cook);
+        pool.execute(cook);
+        cookQueue.add(cook.getName());
     }
 
     public void addWaiter(String name) {
-        Person person = PersonFactory.getPerson("waiter", this, cookQueue, name);
-        everyone.add(person);
-        waiters.add((Waiter)person);
-        pool.execute(person);
-        waiterQueue.add(name);
+        Waiter waiter = new Waiter(this, cookQueue, name);
+        waiter.pause();
+        waiters.add(waiter);
+        pool.execute(waiter);
+        waiterQueue.add(waiter.getName());
     }
+    
 
-    public void addCustomer(String name) {
-        Person person = PersonFactory.getPerson("customer", this, waiterQueue, name);
-        everyone.add(person);
-        customers.add((Customer)person);
-        pool.execute(person);
+    public void addCustomer(String name, int tolerance) {
+        Customer customer = new Customer(this, waiterQueue, name, tolerance);
+        customers.add(customer);
+        pool.execute(customer);
     }
     
     public void upgradeCookSkill(int idx) {
@@ -220,53 +212,53 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
             person.resume();
         }
     }
-
-    public ArrayList<Customer> getCustomers() {
-    	ArrayList<Customer> customerSnapshot = new ArrayList<Customer>();
+    public CopyOnWriteArrayList<Customer> getCustomers() {
+    	CopyOnWriteArrayList<Customer> customerSnapshot = new CopyOnWriteArrayList<Customer>();
 //    	Collections.copy(customerSnapshot, customers);
-    
-    	customers.forEach(e->{
+    	Iterator<Customer> itr = customers.iterator();
+    	while(itr.hasNext()) {
+    		Customer c = itr.next();
     		try {
-				customerSnapshot.add((Customer) e.clone());
+				customerSnapshot.add((Customer) c.clone());
 			} catch (CloneNotSupportedException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-    	});
+    	}
     	
     	return customerSnapshot;
     }
-
-    public ArrayList<Cook> getCooks() {
-    	ArrayList<Cook> cookSnapshot = new ArrayList<Cook>();
+    public CopyOnWriteArrayList<Cook> getCooks() {
+    	CopyOnWriteArrayList<Cook> cookSnapshot = new CopyOnWriteArrayList<Cook>();
 //    	Collections.copy(cookSnapshot, cooks);
-
-        	
-    	cooks.forEach(e->{
+    	Iterator<Cook> itr = cooks.iterator();
+    	while(itr.hasNext()) {
+    		Cook c = itr.next();
     		try {
-    			cookSnapshot.add((Cook) e.clone());
+    			cookSnapshot.add((Cook) c.clone());
 			} catch (CloneNotSupportedException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-    	});
+    	}
+    	
     	
     	return cookSnapshot;
     
     }
-
-    public ArrayList<Waiter> getWaiters() {
-    	ArrayList<Waiter> waiterSnapshot = new ArrayList<Waiter>();
+    public CopyOnWriteArrayList<Waiter> getWaiters() {
+    	CopyOnWriteArrayList<Waiter> waiterSnapshot = new CopyOnWriteArrayList<Waiter>();
 //    	Collections.copy(waiterSnapshot, waiters);
-    
-    	waiters.forEach(e->{
+    	Iterator<Waiter> itr = waiters.iterator();
+    	while(itr.hasNext()) {
+    		Waiter w = itr.next();
     		try {
-    			waiterSnapshot.add((Waiter) e.clone());
+    			waiterSnapshot.add((Waiter) w.clone());
 			} catch (CloneNotSupportedException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-    	});
+    	}
 	    
     	return waiterSnapshot;
     }
@@ -276,20 +268,26 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
         System.out.println("Customer");
         System.out.println("=============");
         
-        for (Customer customer : customers) {
-        	if(customer==null) continue;
+        Iterator<Customer> itrCustomer = customers.iterator();
+        while(itrCustomer.hasNext()) {
+        	Customer customer = itrCustomer.next();
             System.out.println(customer.getName() + " | " + customer.getCurrentState());
         }
         System.out.println("=============");
         System.out.println("Waiter");
         System.out.println("=============");
-        for (Waiter waiter : waiters) {
+        Iterator<Waiter> itrWaiter = waiters.iterator();
+        while(itrWaiter.hasNext()) {
+        	Waiter waiter = itrWaiter.next();
             System.out.println(waiter.getName() + " | " + waiter.getCurrentState());
         }
         System.out.println("=============");
         System.out.println("Cook");
         System.out.println("=============");
-        for (Cook cook : cooks) {
+        
+        Iterator<Cook> itrCook = cooks.iterator();
+        while(itrCook.hasNext()) {
+    		Cook cook = itrCook.next();
             System.out.println(cook.getName() + " | " + cook.getCurrentState());
         }
         System.out.println("Queue Condition");

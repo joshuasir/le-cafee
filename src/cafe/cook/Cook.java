@@ -50,6 +50,7 @@ public class Cook extends Person {
                     }
                 }
             }
+//            System.out.println("cook");
         }
     }
     

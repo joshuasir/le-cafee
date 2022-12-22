@@ -8,7 +8,7 @@ public class GeneratorManager implements Runnable{
 	private final Random rand = new Random();
 	private final Object pauseLock = new Object();
 	private volatile boolean paused = false;
-	private Cafe cafe;
+	private volatile Cafe cafe;
 	public GeneratorManager(Cafe cafe) {
 		this.cafe = cafe;
 	}
@@ -36,7 +36,7 @@ public class GeneratorManager implements Runnable{
             if(rand.nextInt(4)==0) {
             	cafe.addCustomer();
             }
-		
+//            System.out.println("random");
 		}
 	}
 	

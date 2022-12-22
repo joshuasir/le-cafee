@@ -39,7 +39,7 @@ public class MainMenu extends Menu {
                     break;
                 case 2:
                 	new HighscoreMenu().show();
-              
+                	
                     break;
                 case 3:
 //                	System.out.println("tes");

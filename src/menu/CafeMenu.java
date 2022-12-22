@@ -23,15 +23,15 @@ public class CafeMenu extends Menu {
     	
     	pool.execute(cafe);
     	pool.execute(customerGenerator);
-    	while(!cafe.isClose()) {
+    	 do{
     		
-    		scanner.nextLine();
+    		
     		customerGenerator.pause();
     		cafe.pauseGame();
-    		
     		showPause();
-            
-    	}
+    		if(cafe.isClose()) return;
+    		scanner.nextLine();
+    	}while(!cafe.isClose());
     	
     	
     }

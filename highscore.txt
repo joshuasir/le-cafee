@@ -21,4 +21,13 @@ hello,-150
 ultraman,-60
 kratos,300
 hello world,60
-
+asdas,0
+sad,0
+asd,0
+asd,0
+asd,0
+asd,0
+asd,13800
+tes,-5250
+asd,29850
+gfd,11670

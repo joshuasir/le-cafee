@@ -16,12 +16,12 @@ import menu.HighscoreMenu;
 
 
 public class Cafe implements CafeEventListener,Runnable {
-	private CafeMediator cafeMediator;
+	private volatile CafeMediator cafeMediator;
 	private String name = "";
 	private Integer money=1300;
 	private Integer score = 0;
 	private Integer seat = 3;
-	private volatile boolean  paused = false;
+	private volatile boolean paused = false;
 	private volatile boolean close = false;
 	private Integer customerInc = 4;
 	private Integer waiterInc = 3;
@@ -157,9 +157,12 @@ public class Cafe implements CafeEventListener,Runnable {
  
     public boolean addCustomer() {
         // TODO
+    	
+//    	pauseGame();
     	if(getCurrentCustomerSize()>=seat) return false;
     	cafeMediator.addCustomer("P"+customerInc);
     	customerInc++;
+//    	resumeGame();
         return true;
     }
     public int showWaiter() {
@@ -200,6 +203,7 @@ public class Cafe implements CafeEventListener,Runnable {
 
     public boolean upgradeCook(int index, String skill) {
         // TODO
+//    	pauseGame();
     	System.out.println(index+" "+cafeMediator.getCooks().size());
     	if(index<0|| money<150) return false;
     	Cook toUpd = cafeMediator.getCooks().get(index);
@@ -212,6 +216,7 @@ public class Cafe implements CafeEventListener,Runnable {
     		cafeMediator.upgradeCookSkill(index);
     	}	
     	money-=150;
+//    	resumeGame();
         return true;
     }
 	@Override
@@ -242,12 +247,12 @@ public class Cafe implements CafeEventListener,Runnable {
                     }
                 }
             }
-            
-            System.out.println("\n".repeat(100));
-            
             if(close) {
             	return;
             }
+            System.out.println("\n".repeat(100));
+            
+            
             System.out.println("Restaurant "+name);
             cafeMediator.printCurrentState();
             
@@ -257,6 +262,7 @@ public class Cafe implements CafeEventListener,Runnable {
             	System.out.println(ignored.getMessage());
             	
             }
+//            System.out.println("main");
 //            if (i == 3) {
 //            	cafeMediator.pause();
 //                paused = true;
