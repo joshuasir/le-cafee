@@ -228,6 +228,34 @@ public class CafeMediator implements Mediator, CafeEventPublisher {
     	
     	return customerSnapshot;
     }
+    public Customer getCustomer(int index) {
+    	try {
+			return (Customer) customers.get(index).clone();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	return null;
+    }
+    public Cook getCook(int index) {
+    	try {
+			return (Cook) cooks.get(index).clone();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	return null;
+    }
+    public Waiter getWaiter(int index) {
+    	try {
+			return (Waiter) waiters.get(index).clone();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	return null;
+    }
+    
     public CopyOnWriteArrayList<Cook> getCooks() {
     	CopyOnWriteArrayList<Cook> cookSnapshot = new CopyOnWriteArrayList<Cook>();
 //    	Collections.copy(cookSnapshot, cooks);

@@ -179,7 +179,7 @@ public class Cafe implements CafeEventListener,Runnable {
     	
         // TODO
     	if(index<0) return false;
-    	Waiter toUpd = cafeMediator.getWaiters().get(index);
+    	Waiter toUpd = cafeMediator.getWaiter(index);
     	if(toUpd.getSpeed()==5 || money<150) return false;
     	cafeMediator.upgradeWaiter(index);
     	
@@ -204,9 +204,9 @@ public class Cafe implements CafeEventListener,Runnable {
     public boolean upgradeCook(int index, String skill) {
         // TODO
 //    	pauseGame();
-    	System.out.println(index+" "+cafeMediator.getCooks().size());
+//    	System.out.println(index+" "+cafeMediator.getCooks().size());
     	if(index<0|| money<150) return false;
-    	Cook toUpd = cafeMediator.getCooks().get(index);
+    	Cook toUpd = cafeMediator.getCook(index);
     	
     	if(skill.toLowerCase().equals("speed")) {
     		if(toUpd.getSpeed()==5) return false;
