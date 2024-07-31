@@ -56,7 +56,9 @@ This case study demonstrates the value of using design patterns such as the Medi
 
 >- [Refactoring Guru: Design Patterns](https://refactoring.guru/design-patterns)
 
-
+/
+/
+/
 
 
 
